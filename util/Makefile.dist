@@ -1,0 +1,171 @@
+# Makefile.dist						-*- makefile -*-
+
+BINREL=		Squeak-$(VM_MAJOR).$(VM_MINOR)-$(VM_RELEASE)
+BINDIR=		$(BINREL)/$(host)
+BINTAR=		Squeak$(NOX)-$(VM_MAJOR).$(VM_MINOR)-$(VM_RELEASE).$(host)
+
+SRCREL=		Squeak-$(VM_MAJOR).$(VM_MINOR)-$(VM_RELEASE)
+SRCDIR=		$(SRCREL)
+SRCTAR=		$(SRCREL).src
+
+IMGREL=		Squeak-$(VM_MAJOR).$(VM_MINOR)-$(VM_RELEASE)
+IMGTAR=		Squeak-$(SQ_VERSION).image
+
+SYSREL=		Squeak-$(VM_MAJOR)
+SYSDIR=		Squeak-$(VM_MAJOR)
+SYSTAR=		Squeak-$(VM_MAJOR).sources
+
+DOC=		$(topdir)/platforms/unix/doc
+BINDOC=		$(BINDIR)/$(docdir)
+UTIL=		$(topdir)/util
+
+GZIP=		gzip -v1
+
+dist :: dist-bin
+
+dist-all : dist-bin dist-image dist-sources dist-src
+
+dist-bin :
+	@echo "--------------------------------------------------------------"
+	@echo "    Creating $(BINTAR).tar.gz"
+	@echo "--------------------------------------------------------------"
+	-$(SHELL) -ec 'cd nps; $(MAKE) VM_VERSION=$(VM_VERSION) SQ_DIR=$(imgdir)'
+	rm -rf $(BINREL)
+	$(MKINSTALLDIRS) $(BINDIR)
+	$(MAKE) install ROOT=`pwd`/$(BINDIR)/
+	cp -p $(UTIL)/INSTALL $(BINREL)/INSTALL
+	cp -p $(cfgdir)/config.guess $(BINREL)
+	$(UTIL)/mkcopyright $(UTIL)/copyright.txt \
+	  $(DOC)/COPYING > `pwd`/$(BINDOC)/COPYING
+	tar cvfp $(BINTAR).tar $(BINREL)
+	$(GZIP) $(BINTAR).tar
+	$(MKINSTALLDIRS) ../dist
+	mv $(BINTAR).tar.gz ../dist
+	rm -rf $(BINREL)
+
+dist-src : cpmod
+	@echo "--------------------------------------------------------------"
+	@echo "    Creating $(SRCTAR).tar.gz"
+	@echo "--------------------------------------------------------------"
+	rm -rf $(SRCREL)
+	$(MKINSTALLDIRS) $(SRCDIR)
+	$(UTIL)/makedist $(topdir) $(topdir) $(SRCDIR) platforms src
+	cp $(UTIL)/README $(SRCDIR)
+	cp $(topdir)/ChangeLog $(SRCDIR)
+	tar cfps $(SRCTAR).tar $(SRCREL)
+	$(GZIP) $(SRCTAR).tar
+	$(MKINSTALLDIRS) ../dist
+	mv $(SRCTAR).tar.gz ../dist
+	rm -rf $(SRCREL)
+
+SF	= ../../SF.new/platforms
+
+dist-cvs : cpmod
+	@echo "--------------------------------------------------------------"
+	@echo "    Creating SF source tree"
+	@echo "--------------------------------------------------------------"
+	rm -rf $(SF)
+	mkdir -p $(SF)
+	$(UTIL)/makedist $(topdir) $(topdir)/platforms $(SF) unix
+	rm -rf $(SF)/unix/config/autom4te.cache
+	cp $(UTIL)/README $(SF)/unix
+	cp $(UTIL)/README.CVS $(SF)/unix
+	cp $(topdir)/ChangeLog $(SF)/unix
+	find  $(SF) -name '*-' | xargs rm
+
+dist-image :
+	@echo "--------------------------------------------------------------"
+	@echo "    Creating $(IMGTAR).tar.gz"
+	@echo "--------------------------------------------------------------"
+	rm -rf $(IMGREL)
+	$(MKINSTALLDIRS) $(IMGREL)
+	$(MAKE) install-image ROOT=$(IMGREL)
+	cp -p $(UTIL)/INSTALL $(IMGREL)/INSTALL
+	tar cvfp $(IMGTAR).tar $(IMGREL)
+	$(GZIP) $(IMGTAR).tar
+	mv $(IMGTAR).tar.gz ../dist
+	rm -rf $(IMGREL)
+
+dist-sources :
+	@echo "--------------------------------------------------------------"
+	@echo "    Creating $(SYSTAR).tar.gz"
+	@echo "--------------------------------------------------------------"
+	rm -rf $(SYSREL)
+	$(MKINSTALLDIRS) $(SYSREL)
+	$(MAKE) install-sources ROOT=$(SYSREL)
+	cp -p $(UTIL)/INSTALL $(SYSREL)/INSTALL
+	tar cvfp $(SYSTAR).tar $(SYSREL)
+	$(GZIP) $(SYSTAR).tar
+	mv $(SYSTAR).tar.gz ../dist
+	rm -rf $(SYSREL)
+
+dist-check :
+	@echo "--------------------------------------------------------------"
+	@echo "    Building from $(SRCTAR).tar.gz"
+	@echo "--------------------------------------------------------------"
+	rm -rf test
+	mkdir test
+	( set -x ; \
+	  cd test; \
+	  tar xvfpz ../../dist/$(SRCTAR).tar.gz; \
+	  cd $(SRCDIR); \
+	  mkdir build; \
+	  mkdir install; \
+	  cd build; \
+	  ../platforms/unix/config/configure --prefix=`dirname \`pwd\``/install; \
+	  make CFLAGS=-g; \
+	  make install; \
+	  cd ..; \
+	  ls -lR install; \
+	)
+	rm -rf test
+	@echo "=============================================================="
+	@echo "    $(SRCTAR).tar.gz is ready for distribution."
+	@echo "=============================================================="
+
+NPSTAR=		npsqueak-$(VM_MAJOR).$(VM_MINOR)-$(VM_RELEASE).$(host)
+
+dist-npsqueak : squeak nps/npsqueak.so
+	@echo "--------------------------------------------------------------"
+	@echo "    Creating $(NPSTAR).tar.gz"
+	@echo "--------------------------------------------------------------"
+	rm -rf .npsqueak .netscape
+	$(MAKE) npsqueak
+	$(SHELL) -ec 'cd nps; $(MAKE) install HOME=..'
+	cp -p squeak .npsqueak/npsqueakvm-bin
+	tar cvfp $(NPSTAR).tar .npsqueak .netscape
+	$(GZIP) $(NPSTAR).tar
+	$(MKINSTALLDIRS) ../dist
+	mv $(NPSTAR).tar.gz ../dist
+	rm -rf .npsqueak .netscape
+
+dist-clean :
+
+dist-app : Squeak.app
+	@echo "--------------------------------------------------------------"
+	@echo "    Creating $(app).tar.gz"
+	@echo "--------------------------------------------------------------"
+	tar cvfp $(app).tar $(app)
+	$(GZIP) $(app).tar
+	$(MKINSTALLDIRS) ../dist
+	mv $(app).tar.gz ../dist
+
+MACOS=		$(app)/Contents/MacOS
+RESOURCES=	$(app)/Contents/Resources
+
+dist-dmg : Squeak.app
+	@echo "--------------------------------------------------------------"
+	@echo "    Creating $(app).dmg"
+	@echo "--------------------------------------------------------------"
+	$(UTIL)/mkdmg $(VM_VERSION) $(UTIL)/README.app README
+	mv Squeak-$(VM_VERSION).dmg Squeak-vm-$(VM_VERSION).dmg
+	gunzip < $(topdir)/Squeak$(SQ_VERSION).image.gz > $(RESOURCES)/squeak.image
+	gunzip < $(topdir)/Squeak$(SQ_VERSION).changes.gz > $(RESOURCES)/squeak.changes
+	cp -p    $(topdir)/SqueakV3.sources $(MACOS)/.
+	$(UTIL)/mkdmg $(VM_VERSION) $(UTIL)/README.full README
+	mv Squeak-$(VM_VERSION).dmg Squeak-full-$(VM_VERSION).dmg
+	$(MKINSTALLDIRS) ../dist
+	mv *.dmg ../dist
+
+cpmod : $(UTIL)/cpmod.c
+	cc -O -o $@ $<

@@ -1,0 +1,123 @@
+# Makefile.rpm						-*- makefile -*-
+
+RPM_VERSION=	$(VM_MAJOR).$(VM_MINOR)
+RPM_RELEASE=	$(VM_RELEASE)
+
+SQ_URL=		ftp://ftp.squeakfoundation.org/official-dist/
+VM_URL=		http://www-sor.inria.fr/~piumarta/squeak
+VM_SOURCE=	$(VM_URL)/unix/release/Squeak-$(RPM_VERSION)-src.tar.gz
+
+PWD=		$(shell pwd)
+RPM=		rpm
+SU=		sudo -u dieu
+
+rpmimgdir=	$(shell echo $(imgdir) | sed 's./local/./.g')
+rpmplgdir=	$(shell echo $(plgdir) | sed 's./local/./.g')
+rpmbindir=	$(shell echo $(bindir) | sed 's./local/./.g')
+rpmdocdir=	$(shell echo $(docdir) | sed 's./local/./.g')
+rpmmandir=	$(shell echo $(mandir) | sed 's./local/./.g')
+
+
+config.rpm : $(cfgdir)/configure.ac
+	CONFIG_STATUS=./config.rpm ../platforms/unix/config/configure --prefix=/usr
+
+%.spec : $(UTIL)/%.spec $(UTIL)/Makefile.dist .force
+	sed '\
+s,\[sqmajor\],$(SQ_MAJOR),g;\
+s,\[sqminor\],$(SQ_MINOR),g;\
+s,\[squpdate\],$(SQ_UPDATE),g;\
+s,\[sqversion\],$(SQ_VERSION),g;\
+s,\[vmmajor\],$(VM_MAJOR),g;\
+s,\[vmminor\],$(VM_MINOR),g;\
+s,\[vmrelease\],$(VM_RELEASE),g;\
+s,\[vmversion\],$(VM_VERSION),g;\
+s,\[vmsource\],$(VM_SOURCE),g;\
+s,\[vmurl\],$(VM_URL),g;\
+s,\[squrl\],$(SQ_URL),g;\
+s,\[imgdir\],$(rpmimgdir),g;\
+s,\[plgdir\],$(rpmplgdir),g;\
+s,\[bindir\],$(rpmbindir),g;\
+s,\[docdir\],$(rpmdocdir),g;\
+s,\[mandir\],$(rpmmandir),g;\
+s,\[pwd\],$(PWD),g;' < $< > $@
+
+BUILD :
+	ln -s . $@
+
+RPMS/% :
+	mkdir -p $@
+
+dist :: dist-rpm-bin
+
+dist-rpm-all : dist-rpm-bin dist-rpm-image dist-rpm-sources
+
+dist-rpm : rpm
+	@ls -l Squeak*.rpm
+	mv Squeak*.rpm ../dist/.
+	-/bin/rm -f *.spec
+
+dist-rpm-bin : rpm-bin
+	@ls -l Squeak*.rpm
+	mv Squeak*.rpm ../dist/.
+	-/bin/rm -f *.spec
+
+dist-rpm-image : rpm-image
+	@ls -l Squeak*.rpm
+	mv Squeak*.rpm ../dist/.
+	-/bin/rm -f *.spec
+
+dist-rpm-sources : rpm-sources
+	@ls -l Squeak*.rpm
+	mv Squeak*.rpm ../dist/.
+	-/bin/rm -f *.spec
+
+rpm : Squeak.spec BUILD RPMS/ppc .force
+	@echo "--------------------------------------------------------------"
+	@echo "    Creating Squeak.rpm"
+	@echo "--------------------------------------------------------------"
+	-$(SU) $(RPM) -bb Squeak.spec
+	-$(SU) chown -R piumarta /usr/src/rpm/RPMS/*/Squeak*.rpm .
+	-mv /usr/src/rpm/RPMS/*/Squeak*.rpm .
+	/bin/rm *.spec
+
+rpm-bin : Squeak-vm.spec BUILD RPMS/ppc .force
+	@echo "--------------------------------------------------------------"
+	@echo "    Creating Squeak-vm.rpm"
+	@echo "--------------------------------------------------------------"
+	mv config.h config.h.local
+	-/bin/rm -rf usr
+	-sed 's./local/./.g' config.h.local > config.h
+	-$(SHELL) -ec 'cd nps; $(MAKE) VM_VERSION=$(VM_VERSION) SQ_DIR=$(rpmimgdir)'
+	-$(SU) $(RPM) -bb Squeak-vm.spec
+	-$(SU) chown -R piumarta /usr/src/rpm/RPMS/*/Squeak*.rpm .
+	-mv /usr/src/rpm/RPMS/*/Squeak*.rpm .
+	-/bin/rm -rf usr
+	mv config.h.local config.h
+	touch config.h
+	/bin/rm *.spec
+
+rpm-image : Squeak-image.spec BUILD RPMS/noarch .force
+	@echo "--------------------------------------------------------------"
+	@echo "    Creating Squeak.rpm"
+	@echo "--------------------------------------------------------------"
+	mv inisqueak inisqueak.local
+	sed 's./usr/local./usr.g' inisqueak.local > inisqueak
+	chmod a+rx inisqueak
+	-/bin/rm -rf usr
+	-$(SU) $(RPM) -bb Squeak-image.spec
+	-$(SU) chown -R piumarta /usr/src/rpm/RPMS/*/Squeak*.rpm .
+	-mv /usr/src/rpm/RPMS/*/Squeak*.rpm .
+	-/bin/rm -rf usr
+	mv inisqueak.local inisqueak
+	/bin/rm *.spec
+
+rpm-sources : Squeak-sources.spec BUILD RPMS/noarch .force
+	@echo "--------------------------------------------------------------"
+	@echo "    Creating Squeak-sources.rpm"
+	@echo "--------------------------------------------------------------"
+	-/bin/rm -rf usr
+	-$(SU) $(RPM) -bb Squeak-sources.spec
+	-$(SU) chown -R piumarta /usr/src/rpm/RPMS/*/Squeak*.rpm .
+	-mv /usr/src/rpm/RPMS/*/Squeak*.rpm .
+	-/bin/rm -rf usr
+	/bin/rm *.spec

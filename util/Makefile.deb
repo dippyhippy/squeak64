@@ -1,0 +1,69 @@
+# Makefile.deb						-*- makefile -*-
+
+PWD=		$(shell pwd)
+
+DEBFILES=	debian/changelog \
+		debian/control \
+		debian/copyright \
+		debian/dirs \
+		debian/docs \
+		debian/inisqueak.docs \
+		debian/inisqueak.menu \
+		debian/rules \
+		debian/squeak-icon.xpm
+
+debimgdir=	$(shell echo $(imgdir) | sed 's./local/./.g')
+debplgdir=	$(shell echo $(plgdir) | sed 's./local/./.g')
+debbindir=	$(shell echo $(bindir) | sed 's./local/./.g')
+debdocdir=	$(shell echo $(docdir) | sed 's./local/./share/.g')
+debmandir=	$(shell echo $(mandir) | sed 's./local/./share/.g')
+
+debian/% : debian $(topdir)/debian/% $(UTIL)/Makefile.* .force
+	sed '\
+s,\[sqmajor\],$(SQ_MAJOR),g;\
+s,\[sqminor\],$(SQ_MINOR),g;\
+s,\[squpdate\],$(SQ_UPDATE),g;\
+s,\[sqversion\],$(SQ_VERSION),g;\
+s,\[vmmajor\],$(VM_MAJOR),g;\
+s,\[vmminor\],$(VM_MINOR),g;\
+s,\[vmrelease\],$(VM_RELEASE),g;\
+s,\[vmversion\],$(VM_VERSION),g;\
+s,\[vmsource\],$(VM_SOURCE),g;\
+s,\[vmurl\],$(VM_URL),g;\
+s,\[squrl\],$(SQ_URL),g;\
+s,\[imgdir\],$(debimgdir),g;\
+s,\[plgdir\],$(debplgdir),g;\
+s,\[bindir\],$(debbindir),g;\
+s,\[docdir\],$(debdocdir),g;\
+s,\[mandir\],$(debmandir),g;\
+s,\[pwd\],$(PWD),g;' < $< > $@
+
+debdir :
+	[ -d debian ] || mkdir debian
+
+debian : debdir $(DEBFILES) .force
+	chmod +x debian/rules
+
+dist :: dist-deb
+
+dist-deb : deb
+	@ls -l squeak*.deb
+	mv squeak*.deb ../dist/.
+
+deb : debian .force
+	@echo "--------------------------------------------------------------"
+	@echo "    Creating squeak-*.deb"
+	@echo "--------------------------------------------------------------"
+	mv config.h config.h.local
+	sed 's./local/./.g' config.h.local > config.h
+	mv inisqueak inisqueak.local
+	sed 's./usr/local./usr.g' inisqueak.local > inisqueak
+	chmod a+rx inisqueak
+	-/bin/rm -rf debian/squeak-vm debian/squeak-image debian/squeak-sources
+	-$(SHELL) -ec 'cd nps; $(MAKE) VM_VERSION=$(VM_VERSION) SQ_DIR=$(debimgdir)'
+	-dpkg-buildpackage -b -rfakeroot
+	-mv ../squeak*.deb .
+	-/bin/rm -rf debian
+	mv inisqueak.local inisqueak
+	mv config.h.local config.h
+	touch config.h

@@ -1,0 +1,35 @@
+#!/bin/sh
+
+protect='sed s/\([\\`\\"$\\\\]\)/\\\1/g'
+
+case $# in
+  1)	COPYRIGHT=`dirname $0`/COPYRIGHT
+	FILE=$1
+	;;
+  2)	COPYRIGHT=$1
+	FILE=$2
+	;;
+  *)	echo "usage: $0 [copyright.file] source.file" >&2
+	exit 1
+	;;
+esac
+
+PREFIX="`grep -w '@copyright@' $FILE | $protect`"
+
+test "$PREFIX" = "" && {
+  echo "### $FILE: no copyright marker" >&2
+  cat $FILE
+  exit
+}
+
+PREFIX="`echo \"$PREFIX\" | sed 's/\(.*\)@copyright@.*/\1/'`"
+awk '
+/@copyright@/	{ exit }
+		{ print $0 }
+' $FILE
+awk '{ printf "%s%s\n", "'"$PREFIX"'", $0 }' $COPYRIGHT
+awk '
+BEGIN		{ echo=0 }
+/@copyright@/	{ echo=1; next }
+		{ if (echo) print $0 }
+' $FILE

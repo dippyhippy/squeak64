@@ -1,0 +1,77 @@
+#!/bin/sh
+
+# mktargets -- configure top-level library targets		-*- sh -*-
+# 
+# @copyright@
+# 
+# Author: ian.piumarta@inria.fr
+# 
+# Last edited: 2003-08-23 19:33:52 by piumarta on emilia.inria.fr
+
+
+. ./config.sh
+
+no_exports="disabledPlugins"
+make_targets="make.targets"
+
+la='${la}'
+a='$a'
+o='$o'
+
+plugins=""
+if test "${ext_modules}${ext_plugins}" != ""; then
+  for p in ${ext_modules} ${ext_plugins}; do
+    plugins="${plugins} ${p}${la}"
+  done
+fi
+
+echo "" > ${make_targets}
+
+targets=""
+plibs=""
+
+if test "${int_modules}${int_plugins}" != ""; then
+  for p in ${int_modules} ${int_plugins}; do
+    targets="${targets} ${p}/${p}$a"
+    echo							  >> ${make_targets}
+    echo "${p}/${p}$a : .force"					  >> ${make_targets}
+    echo '	@$(SHELL) -ec '"'cd ${p}; "'$(MAKE) '"${p}$a'"	  >> ${make_targets}
+    test -f ${p}.lib && plibs="${plibs} `cat ${p}.lib`"
+  done
+fi
+
+if test "${ext_modules}${ext_plugins}" != ""; then
+  for p in ${ext_modules} ${ext_plugins}; do
+    echo							  >> ${make_targets}
+    echo "${p}${la} :"						  >> ${make_targets}
+    echo '	@$(SHELL) -ec '"'cd ${p}; "'$(MAKE) '"${p}${la}'" >> ${make_targets}
+  done
+fi
+
+if test "${exc_plugins}" != ""; then
+  targets="${targets} ${no_exports}$o"
+  cat > ${no_exports}.c <<EOF
+/* this should be in a header file, but it isn't.  ho hum. */
+typedef struct {
+  char *pluginName;
+  char *primitiveName;
+  void *primitiveAddress;
+} sqExport;
+`for p in ${exc_plugins}; do echo "sqExport ${p}_exports[] = { 0, 0, 0 };"; done | sed 's/-/_/g'`
+EOF
+  cat >> ${make_targets} <<EOF
+
+${no_exports}$o : ${no_exports}.c
+	\$(COMPILE) ${no_exports}$o ${no_exports}.c
+EOF
+fi
+
+mv Makefile Makefile.tmp
+
+sed "s%\[targets\]%${targets}%g
+s%\[plugins\]%${plugins}%g
+s%\[plibs\]%${plibs}%g
+/\[make_targets\]/r ${make_targets}
+s%\[make_targets\]%%g" < Makefile.tmp > Makefile
+
+rm Makefile.tmp

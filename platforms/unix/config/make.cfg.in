@@ -1,0 +1,88 @@
+# make.cfg.in -- mf fragment for configured variables		-*- makefile -*-
+# 
+# @copyright@
+
+# Author: Ian.Piumarta@inria.fr
+# 
+# Last edited: 2003-08-31 19:55:21 by piumarta on emilia.inria.fr
+
+MAKEFLAGS=	--no-print-directory
+
+@SET_MAKE@
+
+VM_MAJOR=	@VM_MAJOR@
+VM_MINOR=	@VM_MINOR@
+VM_RELEASE=	@VM_RELEASE@
+VM_VERSION=	@VM_VERSION@
+
+SQ_MAJOR=	@SQ_MAJOR@
+SQ_MINOR=	@SQ_MINOR@
+SQ_UPDATE=	@SQ_UPDATE@
+SQ_VERSION=	@SQ_VERSION@
+
+DEVEL=		@DEVEL@
+
+host=		@host@
+host_cpu=	@host_cpu@
+host_vendor=	@host_vendor@
+host_os=	@host_os@
+
+topdir=		@topdir@
+cfgdir=		@cfgdir@
+srcdir=		@vmmdir@
+blddir=		@blddir@
+
+top_builddir=	@blddir@
+
+prefix=		@prefix@
+exec_prefix=	@exec_prefix@
+
+bindir=		@bindir@
+libdir=		@libdir@
+datadir=	@datadir@
+mandir=		@mandir@
+imgdir=		@imgdir@
+plgdir=		@plgdir@
+docdir=		$(prefix)/doc/squeak
+
+SHELL=		@SHELL@
+MKINSTALLDIRS=	$(SHELL) $(cfgdir)/mkinstalldirs
+INSTALL=	@INSTALL@
+INSTALL_PROG=	@INSTALL_PROGRAM@ $(INSTALL_ARGS)
+INSTALL_DATA=	@INSTALL_DATA@ $(INSTALL_ARGS)
+UNINSTALL=	$(SHELL) $(cfgdir)/uninstall
+AS=		@AS@
+AWK=		@AWK@
+RANLIB=		@RANLIB@
+LIBTOOL=	@LIBTOOL@
+NM=		@NM@
+LN=		@LN@
+LN_S=		@LN_S@
+
+CC=		@CC@
+DEFS=		@DEFS@
+INCLUDES=	@INCLUDES@
+CPPFLAGS=	@CPPFLAGS@
+CFLAGS=		@CFLAGS@
+WFLAGS=		@WFLAGS@
+LDFLAGS=	@LDFLAGS@
+SOFLAGS=	@SOFLAGS@
+
+LIBS=		@LIBS@
+
+X_CFLAGS=	@X_CFLAGS@
+X_INCLUDES=	@X_INCLUDES@
+X_LIBS=		@X_LIBS@
+
+FFI_DIR=	@FFI_DIR@
+FFI_C=		@FFI_C@
+FFI_S=		@FFI_S@
+FFI_O=		@FFI_O@
+
+INTERP=		@INTERP@
+
+VM_APP_ICONS=	@VM_APP_ICONS@
+
+npsqueak=	@npsqueak@
+install_nps=	@install_nps@
+uninstall_nps=	@uninstall_nps@

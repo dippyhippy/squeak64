@@ -1,0 +1,28 @@
+# Makefile for framebuffer support				-*- makefile -*-
+# 
+# @copyright@
+# 
+# Author: ian.piumarta@inria.fr
+# 
+# Last edited: 2004-04-12 11:56:39 by piumarta on emilia.local
+
+[make_cfg]
+[make_plg]
+
+TARGET		= vm-display-fbdev$a
+OBJS		= sqUnixFBDev$o
+
+XCFLAGS		= $(X_CFLAGS) -Wall -Werror
+
+XINCLUDES	= [includes] $(X_INCLUDES) \
+		  -I$(topdir)/platforms/Cross/plugins/FilePlugin \
+		  -I$(topdir)/platforms/Cross/plugins/B3DAcceleratorPlugin \
+		  -I$(topdir)/platforms/unix/plugins/B3DAcceleratorPlugin
+
+$(TARGET) : $(OBJS) Makefile
+	$(LINK) $(TARGET) $(OBJS)
+	$(RANLIB) $(TARGET)
+
+[make_targets]
+
+.force :

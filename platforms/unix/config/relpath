@@ -1,0 +1,31 @@
+#!/bin/sh
+# 
+# relpath -- construct path relative to cwd
+# 
+# @copyright@
+# 
+# Author: Ian.Piumarta@INRIA.Fr
+# 
+# Last edited: 2002-05-05 07:15:14 by piumarta on emilia.inria.fr
+
+if test $# -ne 2; then
+  echo "usage: $0 srcdir path"
+fi
+
+cwd=$1
+path=$2
+
+for dir in `echo $cwd | tr '/' ' '`; do
+  if expr $path : "/$dir" >/dev/null; then
+    path=`echo $path | sed "s,^/$dir,,"`
+    cwd=`echo $cwd | sed "s,^/$dir,,"`
+  fi
+done
+
+path=`echo $path | sed 's,^/,,'`
+
+for dir in `echo $cwd | tr '/' ' '`; do
+  path="../$path"
+done
+
+echo $path
