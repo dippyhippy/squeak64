@@ -1,0 +1,45 @@
+#!/bin/sh
+
+vmversion=$1; shift
+
+VOLNAME=Squeak-${vmversion}
+APP=Squeak-${vmversion}.app
+DMG=Squeak-${vmversion}.dmg
+TMP=tmp.dmg
+
+echo "estimating size of $APP"
+
+SEC=`du -s $APP|cut -f 1`
+SEC=`expr $SEC \* 120 / 100`
+
+echo "creating $TMP with $SEC sectors"
+
+hdiutil create -sectors $SEC -fs HFS+ -volname $VOLNAME -layout NONE -ov $TMP
+
+echo "attaching $TMP"
+
+set -x
+
+hdiutil attach $TMP | tail -1 | if read DEV DIR ; then
+  echo "attached as $DEV to $DIR"
+  echo "copying $APP to $DIR"
+  cp -R  $APP $DIR
+  while test $# -gt 1; do
+    src=$1; shift;
+    dst=$1; shift;
+    echo copying $src to $dst
+    [ -f $src ] && cp -p $src $DIR/$dst
+  done
+  echo "detaching $DEV"
+  hdiutil detach $DEV
+else
+   echo "failed"
+fi
+
+echo "compressing $TMP"
+
+hdiutil convert $TMP -format UDZO -o $DMG
+
+echo "removing $TMP"
+
+rm $TMP

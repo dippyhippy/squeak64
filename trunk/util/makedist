@@ -1,0 +1,52 @@
+#!/bin/sh
+
+set -e
+
+base=$1; shift
+top=$1; shift
+dist=$1; shift
+
+util=${base}/util
+
+dirs=""
+
+/bin/rm -f /tmp/distdirs
+/bin/rm -f /tmp/distfiles
+
+for d in $*; do
+  ( cd ${top}
+    find ${d} -type d -print |
+      sed '/CVS/d' >> /tmp/distdirs
+    find ${d} -type f -print |
+      sed '/CVS/d
+/#$/d
+/~$/d
+/-$/d
+/\.DS_Store$/d
+/\.tex$/d
+/\.dvi$/d
+/\.rc$/d' >> /tmp/distfiles
+  )
+done
+
+for d in `cat /tmp/distdirs`; do
+  [ -d ${dist}/${d} ] || mkdir ${dist}/${d}
+done
+
+for f in `cat /tmp/distfiles`; do
+  [ -f ${dist}/${f} ] && /bin/rm -f ${dist}/${f}
+  if fgrep '@copyright@' ${top}/${f} >/dev/null; then
+    echo "### ${f}"
+    ${util}/mkcopyright ${util}/copyright.txt ${top}/${f} > ${dist}/${f}
+#   chmod --reference=${top}/${f} ${dist}/${f}
+#   touch --reference=${top}/${f} ${dist}/${f}
+    ./cpmod  ${top}/${f} ${dist}/${f}
+    touch -r ${top}/${f} ${dist}/${f}
+  else
+    echo "+++ ${f}"
+    cp -p ${top}/${f} ${dist}/${f}
+  fi
+done
+
+/bin/rm /tmp/distdirs
+/bin/rm /tmp/distfiles

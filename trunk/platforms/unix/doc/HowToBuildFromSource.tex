@@ -1,0 +1,695 @@
+\documentclass{article}
+
+\usepackage{html,makeidx,color,alltt}
+
+\parindent 0pt
+\parskip 5pt plus 3pt minus 2pt
+
+%begin{latexonly}
+\usepackage{url}
+\newcommand{\cmd}{\url}
+%end{latexonly}
+\begin{htmlonly}
+\newcommand{\cmd}{\texttt}
+\end{htmlonly}
+
+% The ridiculous stuff (like alltt inside textcolor, etc.) is necessary
+% to achieve acceptable output simultaneously in .dvi, .html and .txt.
+
+\newenvironment{note}{\begin{quote}\color{red} Note: }{\end{quote}}
+\newenvironment{pre}{\begin{quote}\begin{alltt}}{\end{alltt}\end{quote}}
+
+\makeindex
+
+\begin{document}
+\latexhtml
+  {\title{Building Unix Squeak ($>=$ 3.2) from source}}%
+  {\title{Building Unix Squeak (>= 3.2) from source}}
+\author{Ian Piumarta\\
+\htmladdnormallink{\texttt{<ian.piumarta@inria.fr>}}{mailto:ian.piumarta@inria.fr}}
+\date{\small Last edited: 2002-06-05 05:22:02 by piumarta on emilia.inria.fr
+\\Translated to .ps/.pdf/.html/.txt: \today}
+\maketitle
+\tableofcontents
+
+% \section*{Availability}
+% 
+% The latest stable release of Unix Squeak is available from:
+% \begin{itemize}
+% \item\htmladdnormallink%
+%   {http://www-sor.inria.fr/~piumarta/squeak/index.html#stable}%
+%   {http://www-sor.inria.fr/~piumarta/squeak/index.html#stable}
+% \end{itemize}
+% The latest development release of Unix Squeak is available from:
+% \begin{itemize}
+% \item\htmladdnormallink%
+%   {http://www-sor.inria.fr/~piumarta/squeak/index.html#devel}%
+%   {http://www-sor.inria.fr/~piumarta/squeak/index.html#devel}
+% \end{itemize}
+% The latest version of this document is available from:
+% \begin{itemize}
+% \item\htmladdnormallink%
+%   {http://www-sor.inria.fr/~piumarta/squeak/unix/devel/build-html/build.html}%
+%   {http://www-sor.inria.fr/~piumarta/squeak/unix/devel/build-html/build.html}
+% \end{itemize}
+% \begin{htmlonly}
+% This document is also available in the following formats:
+% \htmladdnormallink{PostScript}{../build.ps},
+% \htmladdnormallink{PDF}{../build.pdf}, and
+% \htmladdnormallink{text}{../build.txt}.
+% \end{htmlonly}
+
+\section{\texttt{configure} -- \texttt{build} -- \texttt{install}}
+
+Unix Squeak is built using the (almost) universal ``\cmd{configure;
+make; make install}''.  If you haven't come across this before, read on\ldots
+
+Create a build\index{build directory!creating}
+directory (which we will call `\cmd{blddir}' from now on)
+and then `\cmd{cd}' to it:
+\html{\textcolor{blue}}{\begin{alltt}\color{blue}
+  \$ mkdir blddir
+  \$ cd blddir
+\end{alltt}}
+
+A convenient place is just next to the \cmd{platforms} directory,
+like this:
+\html{\textcolor{blue}}{\begin{alltt}\color{blue}
+  \$ cd squeak
+  \$ ls
+  platforms src ...
+  \$ mkdir bld
+  \$ cd bld
+\end{alltt}}
+
+Create the build\index{build directory!configuring}
+environment by running the script \cmd{configure} which
+lives in the \cmd{platforms/unix/config} directory.
+
+\begin{note}
+The \cmd{configure} script accepts lots of options.  To see a list of
+them, run: `\verb|configure --help|'
+\end{note}
+
+Assuming you've created the \cmd{blddir} next to \cmd{platforms},
+this would be:
+\html{\textcolor{blue}}{\begin{alltt}\color{blue}
+  \$ ../platforms/unix/config/configure
+\end{alltt}}
+
+\begin{note}
+This assumes that the VMMaker sources are in `\cmd{../src}'.  However,
+since the Unix Squeak support code is independent of the image version
+from which VMMaker generated the interpreter/plugin sources, it is
+possible that your source distribution comes with more than one
+\cmd{src} directory (corresponding to more than one image version used
+to generate the sources).  In such cases you will have to tell
+\cmd{configure} which source version to use, via the `\html{-}\cmd{--with-src}'
+option.  For example, if there
+are two source directories called \cmd{src-3.2gamma-4857} and
+\cmd{src-3.3.alpha-4881} then you would use \emph{one} of the
+following commands:
+\html{\textcolor{red}}{\begin{alltt}\color{red}
+  \$ .../configure \html{-}--with-src=src-3.2gamma-4857
+        \emph{or}
+  \$ .../configure \html{-}--with-src=src-3.3alpha-4881
+\end{alltt}}
+\end{note}
+
+\noindent
+Build the VM and plugins by running \cmd{make}:
+\html{\textcolor{blue}}{\begin{alltt}\color{blue}
+  \$ make
+\end{alltt}}
+
+\begin{note}
+If you want to build just the VM (without external plugins) or just
+the external plugins (without the VM) then you can use:
+`\verb|make squeak|' or `\verb|make plugins|' respectively.
+\end{note}
+
+Finally install the VM, plugins and manual pages:
+\html{\textcolor{blue}}{\begin{alltt}\color{blue}
+  \$ su root
+  \$ make install
+\end{alltt}}
+
+
+\section{Generating your own VM and plugin sources}
+
+Generating your own VM/plugin sources might be necessary for various reasons:
+\begin{itemize}
+\item you want to change the mix of internal vs. external plugins
+\item you want to remove some plugins from the VM that you will never use
+\item you've pulled in some updates that modify the Interpreter or plugins
+\item you've filed-in (or written) a whole new plugin
+\item etc\ldots
+\end{itemize}
+
+Version 3.2 (and later) of Unix Squeak use
+\htmladdnormallink{VMMaker}{http://minnow.cc.gatech.edu/squeak/2105}%
+\index{VMMaker!reference}
+to generate the core interpreter and plugin sources.
+
+Start Squeak in the top-level directory (the one containing the
+\cmd{platforms} directory); for example:
+\html{\textcolor{blue}}{\begin{alltt}\color{blue}
+  \$ ls
+  src platforms ...
+  \$ squeak MyCoolPlugin.image
+\end{alltt}}
+
+Open a VMMakerTool and modify the setup to your liking.
+
+\begin{note}
+The VMMaker configuration used to build the distributions of Unix
+Squeak is available in
+\cmd{platforms/unix/config/VMMaker.config}.\index{VMMaker!configuration file}
+\end{note}
+
+Then click on the relevant ``\textsf{generate ...}'' button.  You can now
+`\cmd{configure; make; make install}' in your \cmd{blddir} (as
+described above).
+
+\begin{note}
+You only need to run
+\cmd{configure}\index{config.status@\texttt{config.status}!versus \texttt{configure}}
+\textbf{\underline{once}} for a given
+\cmd{blddir} (on the same host).
+If you modify the choice of plugins
+(or change whether they're internal/external)
+then you can update the build environment by running the
+\cmd{config.status}\index{config.status@\texttt{config.status}}
+script in the \cmd{bldddir}, like this:
+\textcolor{red}{\begin{alltt}
+  \$ squeak MyCoolPlugin.image
+  ... generate new sources ...
+  \$ cd blddir
+  \$ ./config.status
+  \$ make
+\end{alltt}}
+This is \emph{much} faster than running \cmd{configure} all over again.
+(In fact, \cmd{make} should detect any changes to the plugin configuration
+and re-run \cmd{config.status} for you automatically.)
+\end{note}
+
+\begin{note}
+`\cmd{configure}' doesn't actually create any files.  The last thing it
+does is run `\cmd{config.status}' to create the configured \emph{file}s
+in \cmd{blddir} from the corresponding \emph{file.in}s in the
+\cmd{unix/config} directory.  So in the remainder of this document the
+phrase `during configuration' means \emph{either} when running
+`\cmd{configure}' for the first time \emph{or} running
+`\cmd{config.status}' to update an already \cmd{configure}d build
+environment.
+\end{note}
+
+
+\section{Adding your own plugins}
+
+\begin{note}
+This section is intended primarily for plugin developers.
+\end{note}
+
+If your plugin\index{plugin!adding your own}
+ requires no platform-specific tweaks then there's
+nothing for you to do.  \cmd{configure} (and \cmd{config.status})
+will provide a default \cmd{Makefile} for it that should work.  If your
+plugin requires only platform-independent tweaks (and/or additional
+hand-written code) then these go in \cmd{platforms/Cross/plugins}, and
+there's nothing for you to do (in Unixland).
+
+On the other hand, if you require special \cmd{configure} tests or
+additional declarations/rules in your plugin's \cmd{Makefile} then you
+need to specify them explicitly.
+
+\begin{note}
+Unix Squeak subscribes to the following philopsophy:
+
+\emph{Absolutely everything that is specific\index{Unix-specific files}
+ to Unix (sources,
+headers, \cmd{configure} and \cmd{Makefile} extensions, etc.) lives
+under \cmd{platforms/unix}.}
+
+In other words: there is not (nor aught there be) \emph{any}
+Unix-related information under the \cmd{platforms/Cross}
+directory.  (Unix Squeak is entirely encapsulated
+under \cmd{platforms/unix} and is utterly immune to
+``random junk'' elsewhere in the \cmd{platforms} tree.)
+\end{note}
+
+First you must create a new directory\index{plugin!Unix-specific directory}
+under \cmd{platforms/unix/plugins} named after your plugin.  This directory
+will hold the files describing the additional configuration checks
+and/or \cmd{Makefile} contents.  For example, if your plugin is
+called ``MyCoolPlugin'' then
+\html{\textcolor{blue}}{\begin{alltt}\color{blue}
+  \$ mkdir platforms/unix/plugins/MyCoolPlugin
+\end{alltt}}
+
+would be the thing to do.  (The following sections will refer to this
+directory as \cmd{platdep} since the full path is quite a mouthful of
+typing for my lazy fingers.)
+
+
+\subsection{Plugin-specific configuration}
+
+Your plugin can ask \cmd{configure}\index{plugin!configuring}
+to run additional tests (and to
+set additional variables in its output files) simply by including a
+file called \cmd{acinclude.m4}\index{acinclude.m4@\texttt{acinclude.m4}}
+in it's \cmd{platdep} directory.
+
+\begin{note}
+The \cmd{configure}\index{configure@\texttt{configure}}
+script is `compiled' from several other files.  If
+you create a `\cmd{platdep./acinclude.m4}' file then you \emph{must}
+`recompile'\index{configure@\texttt{configure}!recreating}
+\cmd{configure}.  You can do this by `\cmd{cd}'ing to
+\cmd{unix/config} and running `\cmd{make}', or (if you have GNU
+\cmd{make}) from the \cmd{blddir} like this:
+\html{\textcolor{red}}{\begin{alltt}\color{red}
+  \$ make -C ../platforms/unix/config
+\end{alltt}}
+\end{note}
+
+In addition to the usual \cmd{autoconf} macros, the following
+macros\index{configure@\texttt{configure}!macros for plugins}
+are available specifically for Squeak plugins to use:
+
+\subsubsection{\texttt{AC\_PLUGIN\_CHECK\_LIB(\emph{lib},\emph{func})}}
+\index{AC\_PLUGIN\_CHECK_LIB@\texttt{AC\_PLUGIN\_CHECK\_LIB}}
+
+This is similar to the \cmd{autoconf} `\cmd{AC_CHECK_LIB}' macro.
+
+\emph{func} is the name of a function required by the plugin, defined
+in the external (system) library \emph{lib}.  The macro checks that
+the library is available (via `\texttt{-l\emph{lib}}') and then adds it
+to the list of libraries required by the plugin (see the explanation
+of \texttt{[plibs]} in Section~\ref{sec:plibs} for a description of
+how library dependencies for plugins are handled).
+
+If \emph{func} cannot be found in \emph{lib} then the plugin will be
+disabled and a message to that effect printed during configuration.
+(The VM can still be built, \emph{without} rerunning VMMaker or
+reconfiguring, and the plugin will simply be ommitted from it.)
+
+
+\subsubsection{\texttt{AC\_PLUGIN\_DEFINE\_UNQUOTED(\emph{keyword},\emph{text})}}
+
+This\index{AC\_PLUGIN\_DEFINE_UNQUOTED@\texttt{AC\_PLUGIN\_DEFINE\_UNQUOTED}}
+is similar to the \cmd{autoconf} `\cmd{AC_DEFINE_UNQUOTED}' macro.
+
+\emph{keyword} is a \cmd{Makefile} keyword (usually of the form
+`[\emph{name}]') and \emph{text} is arbitrary text to be
+associated with it.  Calling this macro causes \cmd{mkmf} to
+substitute \emph{text} for all occurrences of \emph{keyword} in the
+\cmd{Makefile} generated for the plugin.
+
+\subsubsection{Plugin-specific variables}
+
+The following variables are also set during the execution of a
+plugin-specific \cmd{acinclude.m4}:
+
+\begin{itemize}
+\item[] \texttt{\$\{plugin\}} is the name of the plugin;
+\item[] \texttt{\$\{topdir\}} is the path to the top-level directory (containing
+  \cmd{platforms});
+\item[] \texttt{\$\{vmmdir\}} is the path to the VMMaker `\cmd{src}' directory.
+\end{itemize}
+
+
+\subsection{Plugin-specific \texttt{Makefile} declarations and rules}
+
+Three\index{plugin!\texttt{Makefile}}
+mechanisms are avilable for this:
+\begin{enumerate}
+\item scanning additional dirrectories for sources and headers;
+\item including a few additional lines into the default \cmd{Makefile};
+  and 
+\item replacing entirely the default \cmd{Makefile} with a
+  hand-written one.
+\end{enumerate}
+(The last option isn't as scary as it might sound:\@ read on\ldots)
+
+
+\subsubsection{The anatomy of a plugin's \texttt{Makefile}}
+
+Before proceeding, let's take a minute to understand how Unix Squeak
+compiles and links files in its default \cmd{Makefile} for plugins.
+The default
+\cmd{Makefile}\index{Makefile@\texttt{Makefile}}\index{plugin!\texttt{Makefile} anatomy}
+\latexhtml{is shown in Figure~\ref{fig:mf-default}.}{looks like this:}
+
+%begin{latexonly}
+\begin{figure}[ht]
+%end{latexonly}
+\begin{quote}\begin{quote}
+\html{\textcolor{black}}{\begin{alltt}
+# default Makefile for Unix Squeak plugins
+
+[make_cfg]
+[make_plg]
+
+XINCLUDES       = [includes]
+OBJS            = [targets]
+TARGET          = [target]
+PLIBS           = [plibs]
+
+[make_inc]
+
+\$(TARGET) : \$(OBJS) Makefile
+        \$(LINK) \$(TARGET) \$(OBJS) \$(PLIBS)
+
+[make_targets]
+
+.force :
+\end{alltt}}\end{quote}\end{quote}
+%begin{latexonly}
+\caption{Default \texttt{Makefile} ``template'' for plugins.\label{fig:mf-default}}
+\end{figure}
+%end{latexonly}
+
+\begin{note}
+The keywords\index{Makefile@\texttt{Makefile}!keyword substitution}
+appearing between `\texttt{[} square brackets \texttt{]}'
+are substituted during configuration by a preprocessor called
+`\cmd{mkmf}'\index{mkmf@\texttt{mkmf}}
+according to the kind of plugin (internal/external) being built.
+\end{note}
+
+\texttt{\textbf{[make\_cfg]}}\index{[make\_cfg]@\texttt{[make\_cfg]}}
+\index{Makefile keywords@\texttt{Makefile} keywords!\texttt{[make\_cfg]}}
+is the configured variable section.  It
+contains the platform-specific information gleaned by \cmd{configure}
+while it was figuring out which compiler you have, what flags your
+linker needs, where to install stuff, and so on.
+
+\texttt{\textbf{[make\_plg]}}\index{[make\_plg]@\texttt{[make\_plg]}}
+\index{Makefile keywords@\texttt{Makefile} keywords!\texttt{[make\_plg]}}
+contains a handful of definitions which
+depend on whether the plugin is being compiled as internal or
+external:
+\begin{quote}\begin{tabular}{@{\ttfamily}l@{~~~}l}
+o       & the extension for object files \\
+a       & the extension for plugins \\
+COMPILE & the command to compile a source file into an object file \\
+LINK    & the command to link one or more object files into a plugin \\
+\end{tabular}\end{quote}
+
+For internal plugins: \texttt{\$o} is `\cmd{.o}' and \texttt{\$a} is
+`\cmd{.a}'.  \texttt{\$(COMPILE)} is the C compiler
+(`\texttt{\$(CC)~\ldots~-o}', so the first thing after the command
+\emph{must} be the output filename) and \texttt{\$(LINK)} is archiver
+(`\texttt{ar -rc}', again requiring the output file to follow
+immediately).  Note that internal plugins are built as `\cmd{ar}'
+archives before being linked into the final binary.
+
+For external plugins: \texttt{\$o} is `\cmd{.lo}', \texttt{\$a} is
+`\cmd{.la}', and \texttt{\$(COMPILE)} and \texttt{\$(LINK)} are
+invocations of `\cmd{libtool}' to create position-independent objects and
+shared libraries (with a `\cmd{-o}' appearing right at the end, so the
+first thing after the command \emph{must} be the output filename).
+
+\texttt{\textbf{[includes]}}\index{[includes]@\texttt{[includes]}}
+\index{Makefile keywords@\texttt{Makefile} keywords!\texttt{[includes]}}
+is a list of~`\cmd{-I\emph{dir}}'
+compiler flags, one for each of the
+directories\index{mkmf@\texttt{mkmf}!default header directories}
+\textcolor{black}{\begin{alltt}
+  src/plugins/\emph{name}
+  src/vm/intplugins/\emph{name}
+  platforms/Cross/plugins/\emph{name}
+  platforms/unix/plugins/\emph{name}
+\end{alltt}}
+in which at least one header file is present.
+
+\texttt{\textbf{[targets]}}\index{[targets]@\texttt{[targets]}}
+\index{Makefile keywords@\texttt{Makefile} keywords!\texttt{[targets]}}
+is a list of object files
+corresponding to the source (\texttt{.c}) files found in
+the directories:\index{mkmf@\texttt{mkmf}!default source directories}
+\textcolor{black}{\begin{alltt}
+  src/plugins/\emph{name}/*.c
+  src/vm/intplugins/\emph{name}/*.c
+  platforms/Cross/plugins/\emph{name}/*.c
+  platforms/unix/plugins/\emph{name}/*.c
+\end{alltt}}
+where each source file has been stripped of the directory name and had the
+`\cmd{.c}' converted into `\texttt{\$o}'.
+
+\texttt{\textbf{[target]}}\index{[target]@\texttt{[target]}}
+\index{Makefile keywords@\texttt{Makefile} keywords!\texttt{[target]}}
+is the name of the plugin, including the
+\texttt{\$a} extension.
+
+\texttt{\textbf{[plibs]}}\index{[plibs]@\texttt{[plibs]}}
+\index{Makefile keywords@\texttt{Makefile} keywords!\texttt{[plibs]}}
+\label{sec:plibs}
+is a list of zero or more libraries on which the plugin depends (as
+detected using the macro \texttt{AC\_PLUGIN\_CHECK\_LIB} in the
+plugin-specific \cmd{acinclude.m4}).  If the plugin
+is being built internally then this list is empty and the required libraries
+are included in the final link command.  If the plugin is being built
+externally then the plugin itself (a shared object) is linked against
+these libraries (via \texttt{[plist]}) rather than with the main VM binary.
+
+(This is to ensure that a missing shared object needed by an external plugin
+will only affect the operation of that plugin and not prevent the rest
+of the VM from running, which would be the case if the entire VM were
+linked against it.)
+
+\texttt{\textbf{[make\_inc]}}\index{[make\_inc]@\texttt{[make\_inc]}}
+\index{Makefile keywords@\texttt{Makefile} keywords!\texttt{[make\_inc]}}
+is the contents of the
+\cmd{Makefile.inc} file in your plugin's \cmd{platdep} directory (or
+empty if this file doesn't exist).
+
+\texttt{\textbf{[make\_targets]}}\index{[make\_targets]@\texttt{[make\_targets]}}
+\index{Makefile keywords@\texttt{Makefile} keywords!\texttt{[make\_targets]}}
+is a list of rules\index{Makefile@\texttt{Makefile}!target rules}
+for building the files listed in \texttt{[targets]}.
+Each rule\index{plugin!target rules}
+looks like this:
+
+\begin{alltt}
+        name\$o : \emph{original/source/dir/}name.c
+                \$(COMPILE) name\$o \emph{original/source/dir/}name.c
+\end{alltt}
+
+\subsubsection{A note about \texttt{\$(COMPILE)} and \texttt{\$(LINK)} commands}
+
+You should \emph{never} pass additional flags to these
+commands\index{\$(COMPILE)@\texttt{\$(COMPILE)}}%
+\index{\$(LINK)@\texttt{\$(LINK)}}%
+\index{Makefile@\texttt{Makefile}!compile/link commands}
+explicitly.  This is because you cannot know how they are defined.
+(Their definitions depend on whether the plugin is being built
+internally or externally~--- and might even change radically in future
+releases of Unix Squeak.)
+
+Instead you should pass additional compiler/linker
+flags\index{Makefile@\texttt{Makefile}!passing extra flags}
+to these commands by setting the following variables in `\cmd{Makefile.inc}' or
+`\cmd{Makefile.in}':
+\begin{quote}
+\index{\$(XCPPFLAGS)@\texttt{\$(XCPPFLAGS)}}
+\index{\$(XDEFS)@\texttt{\$(XDEFS)}}
+\index{\$(XCFLAGS)@\texttt{\$(XCFLAGS)}}
+\index{\$(XLDFLAGS)@\texttt{\$(XLDFLAGS)}}
+\begin{tabular}{@{\ttfamily}l@{~~~}l}
+XCPPFLAGS	& `\cmd{-I}' flags for \cmd{cpp}		\\
+XDEFS		& `\cmd{-D}' flags for \cmd{cpp}		\\
+XCFLAGS		& anything to be passed to the compiler	\\
+XLDFLAGS	& anything to be passed to the linker	\\
+\end{tabular}
+\end{quote}
+\begin{note}
+`\cmd{mkmf}' already uses `\cmd{XINCLUDES}'\index{\$(XINCLUDES)@\texttt{\$(XINCLUDES)}}
+\index{Makefile@\texttt{Makefile}!avoiding \texttt{\$(XINCLUDES)}}
+to pass the list of
+directories containing plugin header files to \cmd{cpp}.  You can
+redefine it if you like, but make sure that `\cmd{[includes]}'
+appears in its definition (or in the definition of `\cmd{XCPPFLAGS}').
+\end{note}
+
+\subsubsection{Specifying additional source directories}
+
+\cmd{mkmf}\index{mkmf@\texttt{mkmf}!additional source directories}
+looks for a file in your plugin's
+\cmd{platdep} directory called
+`\cmd{mkmf.subdirs}'.\index{mkmf.subdirs@\texttt{mkmf.subdirs}}
+If this file exists then it should contain a list of directory names relative to
+the top-level directory (the one containing the \cmd{src} and
+\cmd{platform} directories).  These
+directories\index{additional plugin source directories}
+will be added to the list of locations searched for
+`\cmd{.c}' and `\cmd{.h}' files while
+constructing the substitutions for `\texttt{[includes]}',
+`\texttt{[targets]}' and `\texttt{[make\_targets]}'.
+
+\subsubsection{Including additional material in the default \texttt{Makefile}}
+
+If the file \cmd{platdep/Makefile.inc}\index{Makefile.inc@\texttt{Makefile.inc}}
+exists then \cmd{mkmf} will
+substitute its contents into the \cmd{Makefile} in place of the
+\texttt{[make\_inc]} keyword.
+
+\begin{note}
+\texttt{Makefile.inc}\index{Makefile.inc@\texttt{Makefile.inc}!keyword substitution}
+is read into the \texttt{Makefile} under
+construction \emph{before} \cmd{mkmf} performs substitutions on the
+`\texttt{[keyword]}'s.  In other words, your \cmd{Makefile.inc} can
+use the above keywords to include relevant declarations and rules
+without worrying about whether the plugin is internal or external.
+\end{note}
+
+
+\subsubsection{Replacing the default \texttt{Makefile} entirely}
+
+If neither of the above are sufficient then you can create a complete
+\cmd{Makefile}\index{Makefile@\texttt{Makefile}!replacing}
+template called \cmd{platdep/Makefile.in}.\index{Makefile.in@\texttt{Makefile.in}}
+\cmd{mkmf} will use this template instead of the default \cmd{Makefile} template
+shown earlier, and will perform keyword substitutions on it as
+described above to create the final \cmd{Makefile}.  (In other words,
+simply copying the default template shown earlier will result in a
+\cmd{Makefile} identical to the one that \cmd{mkmf} would have
+produced by default.
+
+
+\subsection{Examples taken from existing plugins}
+
+By way of example we'll look at how two existing plugins specialise
+their configuration and \cmd{Makefile}s.
+
+\subsubsection{Configuration}
+
+The \cmd{B3DAcceleratorPlugin} requires OpenGL in order to compile.
+The file \cmd{unix/plugins/B3DAcceleratorPlugin/acinclude.m4}\index{acinclude.m4@\texttt{acinclude.m4}!example}
+contains a single call to an \cmd{autoconf}-style macro:
+
+\begin{alltt}
+    AC\_PLUGIN\_SEARCH\_LIBS(glIsEnabled, GL)
+\end{alltt}
+
+This works similarly to the \cmd{autoconf} `\cmd{AC\_SEARCH_LIBS}'
+macro: If a library \cmd{libGL.\{a,so\}} (OpenGL) exists and exports
+the function \cmd{glIsEnabled()} then `\cmd{-lGL}' is added to the
+final VM link command.  Otherwise the plugin is disabled (and a
+message warning of the fact is printed).
+
+\begin{note}
+There's a bug here.  This should also check for `\cmd{GL\_VERSION\_1\_1}' in headers.
+\end{note}
+
+
+\subsubsection{Customising the \texttt{Makefile}}
+
+The \cmd{Mpeg3Plugin} requires a (modified) \cmd{libmpeg} to be
+compiled along with it.  The sources for this library are in (several)
+subdirectories of \cmd{Cross/Meg3Plugin} and they require additional
+\cmd{cpp} definitions in order to compile correctly.
+
+To cope with the additional directories,
+\cmd{unix/plugins/Mpeg3Plugin/mkmf.subdirs}\index{mkmf.subdirs@\texttt{mkmf.subdirs}!example}
+simply lists them:
+
+\begin{alltt}
+  platforms/Cross/plugins/Mpeg3Plugin/libmpeg
+  platforms/Cross/plugins/Mpeg3Plugin/libmpeg/audio
+  platforms/Cross/plugins/Mpeg3Plugin/libmpeg/video
+\end{alltt}
+
+To cope with the additional \cmd{cpp} definitions, we could have
+written a tiny \cmd{Makefile.inc}\index{Makefile.inc@\texttt{Makefile.inc}!example}
+containing:
+
+\begin{alltt}
+    XDEFS   = -DNOPTHREADS
+\end{alltt}
+
+Unfortunately the additional source directories contain various
+utility and test programs (which \emph{must not} be built) so we
+cannot rely on \cmd{mkmf} generating the correct \cmd{[targets]} list.
+
+Instead we just copy the default \cmd{Makefile} ``template'' (shown
+above) as \cmd{Mpeg3Plugin/Makefile.in}
+and insert the required list of targets (and \cmd{cpp}
+definition) manually.  The end result\index{Makefile.in@\texttt{Makefile.in}!example}
+\latexhtml{is shown in Figure~\ref{fig:mf-mpeg}.}{looks like this:}
+%begin{latexonly}
+\begin{figure}[ht]
+%end{latexonly}
+\begin{quote}\html{\begin{quote}}
+\html{\textcolor{black}}{\begin{alltt}
+# Makefile.in for Mpeg3Plugin in Unix Squeak
+
+[make_cfg]
+[make_plg]
+
+TARGET  = Mpeg3Plugin\$a
+
+PLUGIN  = Mpeg3Plugin\$o
+VIDEO   = getpicture\$o headers\$o idct\$o macroblocks\$o \emph{etc...}
+AUDIO   = dct\$o header\$o layer1\$o layer2\$o layer3\$o \emph{etc...}
+LIBMPEG = bitstream\$o changesForSqueak\$o libmpeg3\$o \emph{etc...}
+
+OBJS    = \$(PLUGIN) \$(VIDEO) \$(AUDIO) \$(LIBMPEG)
+
+XINCLUDES       = [includes]
+XDEFS           = -DNOPTHREADS
+
+\$(TARGET) : \$(OBJS) Makefile
+        \$(LINK) \$(TARGET) \$(OBJS)
+
+[make_targets]
+
+.force :
+\end{alltt}}\html{\end{quote}}\end{quote}
+%begin{latexonly}
+\caption{\texttt{unix/plugins/Mpeg3Plugin/Makefile.in}\label{fig:mf-mpeg}}
+\end{figure}
+%end{latexonly}
+
+\begin{note}
+The default `\cmd{[make\_targets]}' will contain additional rules for the
+objects that we're trying to avoid building (because it's built from
+an exhaustive list of `\cmd{.c}' files in the source directories).  This
+does no harm since the offending rules can never be triggered (their
+targets are not listed in `\cmd{OBJS}').
+\end{note}
+
+\subsection{Coping with VMMaker quirks}
+
+VMMaker\index{VMMaker!missing platform support}
+will refuse to compile a plugin if it thinks the plugin
+requires platform support.  This is ``all-or-nothing'':\@ if platform
+support is required on \emph{one} platform then it is required on
+\emph{all} platforms (even if the plugin compiles quite happily
+without platform support in Unix).
+
+The easiest way to add ``null'' platform support is to place an empty
+`\cmd{Makefile.inc}' in the plugin's \cmd{platdep} directory.  (To see
+this in action, look in \cmd{unix/plugins/JPEGReadWriter2Plugin}.)
+
+\subsection{If all else fails}
+
+(Where\index{emergency services}
+``all else failing'' is defined as:\@ ``after trying for 20
+minutes and still getting nowhere''.)
+
+If you're writing a plugin that needs platform support (beyond dumb
+inclusion of a few additional `\cmd{.c}' files) and this document has
+been of no help at all (or if you understood it but you're still
+suffering from ``all else failing'') then send me
+\htmladdnormallink{mail}{mailto:ian.piumarta@inria.fr}
+and I'll be
+happy to help you with the various platdep files.
+
+
+\addcontentsline{toc}{section}{Index}
+
+\printindex
+
+\end{document}

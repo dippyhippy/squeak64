@@ -1,0 +1,7 @@
+H1.vspace.before = 2
+H2.vspace.before = 1
+H3.vspace.before = 1
+H4.vspace.before = 1
+P.vspace.before = 1
+UL.vspace.before = 1
+UL.vspace.after = 1

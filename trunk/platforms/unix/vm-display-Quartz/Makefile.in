@@ -1,0 +1,44 @@
+# Makefile for Quartz Window System support			-*- makefile -*-
+# 
+# @copyright@
+# 
+# Author: ian.piumarta@inria.fr
+# 
+# Last edited: 2003-02-23 18:09:56 by piumarta on emilia.inria.fr
+
+[make_cfg]
+[make_plg]
+
+TARGET=		vm-display-Quartz$a
+OBJS=		sqUnixQuartz$o
+
+XINCLUDES=	[includes] \
+		-I$(topdir)/platforms/Cross/plugins/B3DAcceleratorPlugin \
+		-I$(topdir)/platforms/unix/plugins/B3DAcceleratorPlugin
+
+#XCFLAGS=	-framework Cocoa -framework OpenGL
+
+PLIBS=		-Wl,-framework -Wl,Cocoa \
+		-Wl,-framework -Wl,OpenGL
+
+$(TARGET) : $(OBJS) Makefile
+	$(LINK) $(TARGET) $(OBJS) $(PLIBS)
+	$(RANLIB) $(TARGET)
+
+[make_targets]
+
+DEPS=		$(OBJS:$o=.d)
+
+include $(DEPS)
+
+%.d : $(topdir)/platforms/unix/vm-display-Quartz/%.m
+	$(SHELL) -ec '$(CC) -MM $(CFLAGS) $(INCLUDES) $(XINCLUDES) $< \
+	  | sed '\''s/\($*\)\.o[ :]*/\1.o $@ : /g'\'' > $@; \
+	  [ -s $@ ] || rm -f $@'
+
+%.d : $(topdir)/platforms/unix/vm-display-Quartz/%.c
+	$(SHELL) -ec '$(CC) -MM $(CFLAGS) $(INCLUDES) $(XINCLUDES) $< \
+	  | sed '\''s/\($*\)\.o[ :]*/\1.o $@ : /g'\'' > $@; \
+	  [ -s $@ ] || rm -f $@'
+
+.force :

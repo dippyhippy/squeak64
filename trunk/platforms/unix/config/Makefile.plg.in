@@ -1,0 +1,25 @@
+# Makefile.plg.in -- default rules for plugins		-*- makefile -*-
+# 
+# @copyright@
+# 
+# Author: ian.piumarta@inria.fr
+# 
+# Last edited: 2002-07-08 20:23:48 by piumarta on emilia.inria.fr
+
+[make_cfg]
+[make_plg]
+
+XINCLUDES	= [includes]
+OBJS		= [targets]
+TARGET		= [target]
+PLIBS		= [plibs]
+
+[make_inc]
+
+$(TARGET) : $(OBJS) Makefile
+	$(LINK) $(TARGET) $(OBJS) $(PLIBS)
+	$(RANLIB) $(TARGET)
+
+[make_targets]
+
+.force :

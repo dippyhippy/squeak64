@@ -1,0 +1,155 @@
+#!/bin/sh
+cat <<"EOF" >/dev/null
+
+			    INSTALLING SQUEAK
+			    -----------------
+
+    This directory contains the executables, libraries and other files
+    needed to run Squeak.  You need to fetch and unpack the following
+    archives:
+
+	Squeak-X.Y-<cpu-vendor-os>.tar.gz
+	    the precompiled binaries, libraries, manual pages and
+	    other documentation for Squeak version X.Y.  You need to
+	    fetch this if you are installing a new version of Squeak.
+	    You must fetch the archive corresponding to the
+	    architecture on which you want to run Squeak.
+
+	    If you don't already have the image/changes files
+	    corresponding to version X.Y then you also need to fetch:
+
+	Squeak-X.Y-image.tar.gz
+	    the .image and .changes files for Squeak version X.Y.
+	    This is shared between all architectures.  You need to
+	    fetch this if you are installing a new version of Squeak.
+	    You can use the contents of this archive on any
+	    architecture.
+
+	    If you don't already have the system sources file for
+	    Squeak version X then you also need to fetch:
+
+	SqueakVX.sources.tar.gz
+	    the system .sources file.  This is shared between all
+	    architectures and all versions of Squeak with the same
+	    major version number.  You only need to fetch this once
+	    for each major version of Squeak that you install.  You
+	    can use the contents of this archive on any architecture.
+
+    Fetch the archive/s that you need and then unpack it/them in the
+    same directory.  This will create a subdirectory called Squeak-X.Y
+    containing a hierarchy that mirrors the installed locations of the
+    various files.  The architecture-specific files are in a
+    subdirectory named after your "cpu-vendor-os" name.
+
+    (Note that the system .sources file will be unpacked in a
+    subdirectory called Squeak-X, without the minor version number.
+    This is to remind you that you only need to fetch it once, unless
+    you are upgrading to Squeak to a different major version number.)
+
+    To make things easier on yourself you might want to run this file
+    as a shell script to install the files in the correct locations on
+    your machine, like this:
+
+	$ su root
+	# cd Squeak-X.Y
+	# /bin/sh INSTALL
+	# exit
+	$
+
+    If this complains that it cannot find the architecture-specific
+    files for your machine, even though you have downloaded and
+    unpacked the relevant archive, then there might simply be a
+    difference in operating system versions.  If you believe that the
+    architecture-specific files in the directory "foo-bar-baz" will
+    work for you, then you can specify that directory as an argument
+    to INSTALL:
+
+	$ su root
+	# cd Squeak-X.Y
+	# /bin/sh INSTALL foo-bar-baz
+	# exit
+	$
+
+    You are strongly encouraged not to move things around.  If you do
+    then you will totally invalidate your (already non-existent)
+    warranty.  If you absolutely must install the libraries in cruel
+    and unusual locations then you would be much better off fetching
+    the sources
+
+	Squeak-X.Y.tar.gz
+
+    and then specifying your preferred locations with options to the
+    "configure" script, before compiling and installing Squeak for
+    yourself.  This will ensure that the virtual machine knows where
+    to go looking for various runtime files, and will also update the
+    manual page to be consistent with the locations that you choose.
+    Instructions for configuring and building Squeak are in the file
+    BUILD.UnixSqueak in the above archive.
+
+EOF
+
+# INSTALL -- install Squeak from unpacked tarballs
+# 
+# Author: Ian.Piumarta@INRIA.Fr
+# 
+# Last edited: 2002-06-07 15:11:30 by piumarta on emilia.inria.fr
+
+set -e
+
+echo=echo
+ROOT="/"
+
+case $1 in
+  -)    # dry-run
+	shift
+	ROOT=${PWD}/installed
+	test -d $ROOT || mkdir $ROOT
+	;;
+  -*)	# temp install to create RPM: relocate install root
+	ROOT=`echo $1 | sed 's,^-,,'`
+        shift
+	mkdir -p $ROOT
+	# relocate /usr/local/% -> /usr/%
+	if test -d usr/local; then
+	  mv usr/local/* usr/.
+	  rmdir usr/local
+	fi
+	# and work silently
+#	echo=:
+	;;
+esac
+
+if test -d usr; then
+  $echo "Installing architecture-independent files in: $ROOT"
+  $echo
+  tar -cf - usr | ( cd $ROOT; tar -xvf - )
+fi
+
+test ! -f config.guess && exit 0
+
+if test $# -eq 0; then
+  arch=`./config.guess | sed 's,-unknown,,g'`
+  $echo
+  $echo "Your architecture appears to be: $arch."
+else
+  arch=$1
+fi
+
+if test ! -d $arch; then
+  $echo
+  $echo "No binaries/libraries found for $arch." >&2
+  $echo "You might have tell INSTALL whch cpu-vendor-os to use." >&2
+  exit 1
+fi
+
+$echo
+$echo "Installing binaries for $arch in: $ROOT"
+$echo
+
+cd $arch
+tar -cf - usr | ( cd $ROOT; tar -xvf - )
+
+if test -f /usr/local/man/man1/squeak.1; then
+  $echo
+  $echo "You can now enter \`man squeak' for further instructions."
+fi
